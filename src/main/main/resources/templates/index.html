@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Home page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/employee/gettop3',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow3').after(createDataRowsFromJson3(data));
+                }
+            });
+            jQuery("#showwomen").click(function () {
+                jQuery.ajax({
+                    url: '/employee/SHOW_WOMEN_THAT_HAVE_MORE_SALARY_THAN_ALL_MEN_IN_N_POST/' + jQuery("#postname").val(),
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        $("#employeetable").show();
+                        jQuery("#oldemployeecount").hide();
+                        $("#deletedeptable").hide();
+                        jQuery.ajax({
+                            url: '/employee/gettop3',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('#headerrow3').after(createDataRowsFromJson3(data));
+                            }
+                        });
+                    }
+                });
+            });
+
+            jQuery("#updatequalification").click(function () {
+                jQuery.ajax({
+                    url: '/qualification/SET_TODAY_IF_QUALIFICATION_WAS_EXPIRED',
+                    type: 'PUT',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/employee/gettop3',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('#headerrow3').after(createDataRowsFromJson3(data));
+                            }
+                        });
+                        alert("Застарілі кваліфікації оновлено!");
+                    }
+                });
+            });
+
+            jQuery("#showcount").click(function () {
+                jQuery.ajax({
+                    url: '/employee/NUMBER_OF_EMPLOYEES_WHO_WORKS_MORE_THAN_N_YEARS/' + jQuery("#years").val(),
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery("#oldemployeecount").text("Кількість працівників що працюють довше ніж " + jQuery("#years").val() + " років: " + data);
+                        jQuery("#oldemployeecount").show();
+                        $("#employeetable").hide();
+                        $("#deletedeptable").hide();
+                    },
+                    error: function (error){
+                        jQuery.ajax({
+                            url: '/employee/gettop3',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('#headerrow3').after(createDataRowsFromJson3(data));
+                            }
+                        });
+                        alert("Не всі поля були заповнені")
+                    }
+                });
+            });
+
+            jQuery("#deletelog").click(function () {
+                jQuery.ajax({
+                    url: '/department/deletelog',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/employee/gettop3',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('#headerrow3').after(createDataRowsFromJson3(data));
+                            }
+                        });
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow2').after(createDataRowsFromJson2(data));
+                        $("#deletedeptable").show();
+                        jQuery("#oldemployeecount").hide();
+                        $("#employeetable").hide();
+                    }
+                });
+            });
+
+        });
+
+
+        function createDataRowsFromJson3(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].sex;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].post_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function createDataRowsFromJson2(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].department_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].department_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].department_boss_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].birth_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].home_adress;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].phone_number;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].sex;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].employment_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].post_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a class="active" onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+
+    <div class="burger-menu">
+
+        <a href="#" class="burger-menu__button">
+            <span class="burger-menu__lines"></span>
+        </a>
+
+        <nav class="burger-menu__nav">
+            <a href="#section-1" class="burger-menu__link">
+                <select  name="postname" id="postname" class="inputs" style="height: 27px; width: 50px;">
+                    <option th:each="post : ${posts}" th:text="${post.getName()}" th:value="${post.getName()}"></option>
+                </select>
+                <input type="button" name="showwomen" id="showwomen" value="Show women" class="editButton inBtn" style="width: 250px;"> <br>
+                <input type="button" name="updatequalification" id="updatequalification" value="Update qualification" class="editButton inBtn" style="width: 310px;"> <br>
+                <input type="number" name="years" id="years" class="inputs" style="height: 27px; width: 50px;"/>
+                <input type="button" name="showcount" id="showcount" value="показати кількість працівників, які працюють більше ніж н років" class="editButton inBtn" style="width: 250px;"> <br>
+                <input type="button" name="deletelog" id="deletelog" value="Show deleted departments" class="editButton inBtn" style="width: 310px;"> <br>
+            </a>
+        </nav>
+        <div class="burger-menu__overlay"></div>
+    </div>
+
+    <div id="tableBlock">
+        <h2>Main page</h2>
+        <p id="oldemployeecount" hidden></p>
+        <table style="width: 100%" border="1" id="employeetable2">
+            <tr id="headerrow3">
+                <td>Id</td>
+                <td>Name</td>
+                <td>Sex</td>
+                <td>Post Id</td>
+            </tr>
+        </table>
+        <table style="width: 100%" border="1" id="deletedeptable" hidden>
+            <tr id="headerrow2">
+                <td>Id</td>
+                <td>Department Id</td>
+                <td>Department Name</td>
+                <td>Department boss name</td>
+            </tr>
+        </table>
+        <table style="width: 100%" border="1" id="employeetable" hidden>
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Name</td>
+                <td>Birth date</td>
+                <td>Home adress</td>
+                <td>Phone number</td>
+                <td>Sex</td>
+                <td>Employment date</td>
+                <td>Post Id</td>
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

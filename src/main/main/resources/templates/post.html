@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Post page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/post/getAllPosts',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/post/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#addpost").click(function () {
+                jQuery("#postname").css('border', 'hidden');
+                jQuery("#postsalary").css('border', 'hidden');
+                var Post = {
+                    name: jQuery("#postname").val(),
+                    department: {
+                        id: jQuery("#departmentId").val()
+                    },
+                    salary: jQuery("#postsalary").val()
+                };
+                var url = '/post';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Post),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/post/getAllPosts',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#departmentId").val('');
+                                jQuery("#postname").val('');
+                                jQuery("#postsalary").val('');
+                            }
+                        });
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "name") {
+                            jQuery("#postname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "salary") {
+                            jQuery("#postsalary").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].post_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].post_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].salary;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].department_id;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deletePost(" + data[key].post_id + ")' value='Delete post' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editPost(this)' value='Edit post' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deletePost(id) {
+            var url = '/post/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/post/getAllPosts',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function editPost(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+
+                if (index == 1) {
+                    jQuery(this).html("<input type='text' placeholder='Post name...' id='editname' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 2) {
+                    jQuery(this).html("<input type='number' placeholder='Salary...' id='editsalary' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 3) {
+                    // jQuery(this).html("<select  name='editdepartmentId' id='editdepartmentId'>"+
+                    //     "<option value=''</option>"+
+                    //     "<option th:each='department : ${departments}' th:text='${department.getId()}' th:value='${department.getId()}'></option>"+
+                    // "</select>");
+                    if (jQuery(this).text() === "null") {
+                        jQuery(this).html("<input type='number' id='editdepId' class='inputs'/>");
+                    }else {
+                        jQuery(this).html("<input type='number' id='editdepId' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 4) {
+                    var actionHtml = "<input type='button' onclick='applyEditPost(this)' value='Update post' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            var id;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index != 0 && index != 4) {
+                    jQuery(this).html(jQuery(this).find('input').val());
+                } else if (index == 4) {
+                    var actionHtml = "<input type='button' onclick='deletePost(" + id +
+                        ")' value='Delete post' class='delButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='editPost(this)' value='Edit post' class='editButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+                jQuery.ajax({
+                    url: '/post/getAllPosts',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                    }
+                });
+            });
+        }
+
+        function applyEditPost(button) {
+            jQuery("#postname").css('border', 'hidden');
+            jQuery("#postsalary").css('border', 'hidden');
+            var id, post_name, salary, departmentid;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    post_name = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    salary = jQuery(this).find('input').val();
+                } else if (index == 3) {
+                    departmentid = jQuery(this).find('input').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/post/update';
+            var newPost = {
+                id: id,
+                name: post_name,
+                department: {
+                    id: departmentid
+                },
+                salary: salary
+            }
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newPost),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/post/getAllPosts',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                    jQuery(button).closest('tr').children().each(function (index, value) {
+                        if (index == 1 && e.responseJSON.responseMessage === "name") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 2 && e.responseJSON.responseMessage === "salary") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        }
+                    });
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a class="active" onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp"><input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+<div id="tableBlock">
+    <h2>Post table</h2> <br>
+    <table style="width: 100%" border="1" id="posttable">
+        <tr id="headerrow">
+            <td>Id</td>
+            <td>Name</td>
+            <td>Salary</td>
+            <td>Department Id</td>
+            <td>Action</td>
+        </tr>
+        <tr id="inputrow">
+            <td></td>
+<!--            <form>-->
+            <td><input type="text" name="postname" id="postname" placeholder="Post name..." class="inputs" required/></td>
+            <td><input type="number" name="postsalary" id="postsalary" placeholder="Salary..." class="inputs" required/></td>
+            <td><select name="departmentId" id="departmentId" class="inputs">
+                <option value=""></option>
+                <option th:each="department : ${departments}" th:text="${department.getId()}"
+                        th:value="${department.getId()}"></option>
+            </select></td>
+            <td><input type="button" name="addpost" id="addpost" value="Add post" class="addButton"></td>
+<!--            </form>-->
+        </tr>
+    </table>
+    <br><br>
+</div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

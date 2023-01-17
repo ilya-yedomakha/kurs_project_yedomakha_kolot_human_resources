@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>User page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/admin/user/getAllUsers',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            // jQuery("#showoneusr").click(function () {
+            //     var url = '/user/search/' + jQuery("#usrbyid").val();
+            //     $.ajax({
+            //         url: url,
+            //         dataType: 'json',
+            //         type: 'GET',
+            //         success: function (data) {
+            //             jQuery('.datarow').remove();
+            //             jQuery('#headerrow').after(createDataRowsFromJson(data));
+            //             jQuery('#inputrow').hide();
+            //         }
+            //     });
+            // });
+
+            jQuery("#adduser").click(function () {
+                jQuery("#email").css('border', 'hidden');
+                jQuery("#firstname").css('border', 'hidden');
+                jQuery("#lastname").css('border', 'hidden');
+                jQuery("#password").css('border', 'hidden');
+                var Usr = {
+                    email: jQuery("#email").val(),
+                    firstName: jQuery("#firstname").val(),
+                    lastName: jQuery("#lastname").val(),
+                    password: jQuery("#password").val()
+                };
+                var url = '/admin/user';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Usr),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/admin/user/getAllUsers',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#email").val('');
+                                jQuery("#firstname").val('');
+                                jQuery("#lastname").val('');
+                                jQuery("#password").val('');
+                            }
+                        });
+                        console.log("success!")
+                    },
+                    error: function (e) {
+                        alert("Error! The field " +e.responseJSON.responseMessage+ " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "Email") {
+                            jQuery("#email").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "First Name") {
+                            jQuery("#firstname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "Last Name") {
+                            jQuery("#lastname").css('border', '1px solid #f6465d');
+                        }
+                        else if (e.responseJSON.responseMessage === "Password") {
+                            jQuery("#password").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].email;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].firstName;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].lastName;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + '****';
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteUser(" + data[key].id + ")' value='Delete user' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='showRoles(" + data[key].id + ")'  value='Roles' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function showRoles(id) {
+            location.href = id+"/role/show";
+        }
+
+        function deleteUser(id) {
+            var url = '/admin/user/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/admin/user/getAllUsers',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <p sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></p>
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Specialty</a>
+        <nav class="buttons">
+            <ul class="menu">
+                <li><a class="active">Admin</a>
+                    <ul class="submenu">
+                        <li><a class="subBtn" onclick="location.href = '/admin/user/show';">Users</a></li>
+                        <li><a class="subBtn" onclick="location.href = '/admin/rights/show';">Roles</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="search-container">
+            <form action="/action_page.php">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+                <a onclick="location.href = '/cab';" class="material-icons" style="font-size: 24px; padding-left: 0px;">person</a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2>User table</h2> <br>
+        <table style="width: 100%" border="1" id="usertable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Email</td>
+                <td>First Name</td>
+                <td>Last Name</td>
+                <td>Password</td>
+                <td>Action</td>
+            </tr>
+            <tr id="inputrow">
+                <td></td>
+
+                <td><input type="text" placeholder="Email..." name="email" id="email"
+                           class="inputs"/></td>
+                <td><input type="text" placeholder="First name..." name="firstname" id="firstname"
+                           class="inputs"/></td>
+                <td><input type="text" placeholder="Last name..." name="lastname" id="lastname"
+                           class="inputs"/></td>
+                <td><input type="text" placeholder="Password..." name="password" id="password"
+                           class="inputs"/></td>
+                <td><input type="button" name="adduser" id="adduser" value="Add user"
+                           class="addButton"></td>
+
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

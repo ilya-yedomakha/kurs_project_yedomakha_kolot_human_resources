@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Promotion page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/promotion/getAllPromotions',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/promotion/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#addpromotion").click(function () {
+                jQuery("#promotiontype").css('border', 'hidden');
+                jQuery("#promotiondate").css('border', 'hidden');
+                var Promotion = {
+                    promotion_type: jQuery("#promotiontype").val(),
+                    employee: {
+                        id: jQuery("#employeeId").val()
+                    },
+                    promotion_date: jQuery("#promotiondate").val()
+                };
+                var url = '/promotion';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Promotion),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/promotion/getAllPromotions',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#promotiontype").val('');
+                                jQuery("#employeeId").val('');
+                                jQuery("#promotiondate").val('');
+                            }
+                        });
+                        console.log("success!")
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "type") {
+                            jQuery("#promotiontype").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "date") {
+                            jQuery("#promotiondate").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].promotion_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].promotion_type;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].promotion_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].employee_id;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deletePromotion(" + data[key].promotion_id + ")' value='Delete promotion' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editPromotion(this)' value='Edit promotion' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deletePromotion(id) {
+            var url = '/promotion/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/promotion/getAllPromotions',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function editPromotion(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+
+                if (index == 1) {
+                    jQuery(this).html("<input type='text' placeholder='Promotion type...' id='edittype' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 2) {
+                    jQuery(this).html("<input type='date' id='editdate' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 3) {
+                    // jQuery(this).html("<select  name='editemployeeId' id='editemployeeId'>"+
+                    //     "<option value=''</option>"+
+                    //     "<option th:each='employee : ${employees}' th:text='${employee.getId()}' th:value='${employee.getId()}'></option>"+
+                    // "</select>");
+                    if (jQuery(this).text() === "null") {
+                        jQuery(this).html("<input type='number' id='editemployeeId' class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='number' id='editemployeeId' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 4) {
+                    var actionHtml = "<input type='button' onclick='applyEditPromotion(this)' value='Update promotion' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            var id;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index != 0 && index != 4) {
+                    jQuery(this).html(jQuery(this).find('input').val());
+                } else if (index == 4) {
+                    var actionHtml = "<input type='button' onclick='deletePromotion(" + id +
+                        ")' value='Delete promotion' class='delButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='editPromotion(this)' value='Edit promotion' class='editButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+                jQuery.ajax({
+                    url: '/promotion/getAllPromotions',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                    }
+                });
+            });
+        }
+
+        function applyEditPromotion(button) {
+            jQuery("#promotiontype").css('border', 'hidden');
+            jQuery("#promotiondate").css('border', 'hidden');
+            var id, promotion_type, date, employeeid;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    promotion_type = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    date = jQuery(this).find('input').val();
+                } else if (index == 3) {
+                    employeeid = jQuery(this).find('input').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/promotion/update';
+            var newPromotion = {
+                id: id,
+                promotion_type: promotion_type,
+                employee: {
+                    id: employeeid
+                },
+                promotion_date: date
+            }
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newPromotion),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/promotion/getAllPromotions',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                    jQuery(button).closest('tr').children().each(function (index, value) {
+                        if (index == 1 && e.responseJSON.responseMessage === "type") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 2 && e.responseJSON.responseMessage === "date") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        }
+                    });
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a class="active" onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp"><input
+                    type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2>Promotion table</h2> <br>
+        <table style="width: 100%" border="1" id="promotiontable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Type</td>
+                <td>Date</td>
+                <td>employee Id</td>
+                <td>Action</td>
+            </tr>
+            <tr id="inputrow">
+                <td></td>
+                <!--            <form>-->
+                <td><input type="text" placeholder="Promotion type..." name="promotiontype" id="promotiontype"
+                           class="inputs" required/></td>
+                <td><input type="date" name="promotiondate" id="promotiondate" class="inputs" required/></td>
+                <td><select name="employeeId" id="employeeId" class="inputs">
+                    <option value=""></option>
+                    <option th:each="employee : ${employees}" th:text="${employee.getId()}"
+                            th:value="${employee.getId()}"></option>
+                </select></td>
+                <td><input type="button" name="addpromotion" id="addpromotion" value="Add promotion" class="addButton">
+                </td>
+                <!--            </form>-->
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

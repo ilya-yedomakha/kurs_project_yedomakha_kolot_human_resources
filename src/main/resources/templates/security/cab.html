@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Post page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/cab/getUserByEmail/' + jQuery("#email").text(),
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    console.log(data);
+                    jQuery("#idUser").text(data.id)
+                    jQuery("#email").text(data.email)
+                    jQuery("#firstname").text(data.firstName)
+                    jQuery("#lastname").text(data.lastName)
+                    jQuery("#password").text('****')
+
+                }
+            });
+
+            jQuery("#deleteuser").click(function () {
+                var url = '/cab/delete/' + jQuery("#idUser").text();
+                //Send ajax request for deleting product
+                jQuery.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    success: function () {
+                        location.href = "/logout"
+                    }
+                });
+            });
+
+            jQuery("#showupdate").click(function () {
+                jQuery("#showupdate").hide();
+                jQuery("#update").show();
+                jQuery("#emailinput").show();
+                jQuery("#firstnameinput").show();
+                jQuery("#lastnameinput").show();
+                jQuery("#passwordinput").show();
+
+                jQuery("#emailinput").val(jQuery("#email").text());
+                jQuery("#firstnameinput").val(jQuery("#firstname").text());
+                jQuery("#lastnameinput").val(jQuery("#lastname").text());
+                jQuery("#passwordinput").val('');
+            });
+
+            jQuery("#update").click(function () {
+                var url = '/cab/update';
+                var newEmployee = {
+                    id: jQuery("#idUser").text(),
+                    email: jQuery("#emailinput").val(),
+                    firstName: jQuery("#firstnameinput").val(),
+                    lastName: jQuery("#lastnameinput").val(),
+                    password: jQuery("#passwordinput").val()
+                }
+                jQuery.ajax({
+                    url: url,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(newEmployee),
+                    dataType: 'json',
+                    success: function (data) {
+                        location.href = "/logout"
+                    },
+                    error: function (e) {
+                        location.href = "/logout"
+                    }
+                });
+            });
+        });
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <p sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></p>
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Specialty</a>
+        <nav class="buttons">
+            <ul class="menu">
+                <li><a>Admin</a>
+                    <ul class="submenu">
+                        <li><a class="subBtn" onclick="location.href = '/admin/user/show';">Users</a></li>
+                        <li><a class="subBtn" onclick="location.href = '/admin/rights/show';">Roles</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp">
+                <input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+                <a onclick="location.href = '/cab';"  class="material-icons" id="activecab" style="font-size: 24px; padding-left: 0px;">person</a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2></h2> <br>
+        <h2></h2> <br>
+        <h2>Profile</h2> <br>
+        <span id="idUser" hidden></span>
+        <br>
+        Email: <span id="email" sec:authentication="principal.username"> User</span>
+        <input type="text" placeholder="email..." name="emailinput" id="emailinput" class="inputs" hidden/>
+        <br>
+        <br>
+        First name: <span id="firstname"> </span>
+        <input type="text" placeholder="First name..." name="firstnameinput" id="firstnameinput" class="inputs" hidden/>
+        <br>
+        <br>
+        Last name: <span id="lastname"></span>
+        <input type="text" placeholder="Last name..." name="lastnameinput" id="lastnameinput" class="inputs" hidden/>
+        <br>
+        <br>
+        Password: <span id="password"></span>
+        <input type="text" placeholder="Password..." name="passwordinput" id="passwordinput" class="inputs" hidden/>
+        <br>
+        <br>
+        <input type="button" name="showupdate" id="showupdate" value="Show Update" class="addButton">
+        <input type="button" name="update" id="update" value="Update" class="addButton" hidden>
+        <input type="button" name="deleteuser" id="deleteuser" value="Delete user" class="delButton">
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

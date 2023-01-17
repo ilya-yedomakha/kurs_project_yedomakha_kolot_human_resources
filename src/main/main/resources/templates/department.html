@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Department page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/department/getAllDepartments',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/department/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#adddepartment").click(function () {
+                jQuery("#departmentname").css('border', 'hidden');
+                jQuery("#departmentbossname").css('border', 'hidden');
+                var Dept = {
+                    name: jQuery("#departmentname").val(),
+                    bossName: jQuery("#departmentbossname").val()
+                };
+                var url = '/department';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Dept),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/department/getAllDepartments',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#departmentname").val('');
+                                jQuery("#departmentbossname").val('');
+                            }
+                        });
+                        console.log("success!")
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "name") {
+                            jQuery("#departmentname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "boss name") {
+                            jQuery("#departmentbossname").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].bossName;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteDepartment(" + data[key].id + ")' value='Delete department' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editDepartment(this)' value='Edit department' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deleteDepartment(id) {
+            var url = '/department/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/department/getAllDepartments',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function editDepartment(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 1) {
+                    jQuery(this).html("<input type='text' placeholder='Department name...' id='editname' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 2) {
+                    jQuery(this).html("<input type='text' placeholder='Boss name...' id='editbossname' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 3) {
+                    var actionHtml = "<input type='button' onclick='applyEditDepartment(this)' value='Update department' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            var id;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index != 0 && index != 3) {
+                    jQuery(this).html(jQuery(this).find('input').val());
+                } else if (index == 3) {
+                    var actionHtml = "<input type='button' onclick='deleteDepartment(" + id +
+                        ")' value='Delete department' class='delButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='editDepartment(this)' value='Edit department' class='editButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+                jQuery.ajax({
+                    url: '/department/getAllDepartments',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                    }
+                });
+            });
+        }
+
+        function applyEditDepartment(button) {
+            jQuery("#departmentname").css('border', 'hidden');
+            jQuery("#departmentbossname").css('border', 'hidden');
+            var id, name, bossname;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    name = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    bossname = jQuery(this).find('input').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/department/update';
+            var newDept = {
+                id: id,
+                name: name,
+                bossName: bossname
+            };
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newDept),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/department/getAllDepartments',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                    jQuery(button).closest('tr').children().each(function (index, value) {
+                        if (index == 1 && e.responseJSON.responseMessage === "name") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 2 && e.responseJSON.responseMessage === "boss name") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        }
+                    });
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a class="active" onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp">
+                <input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2>Department table</h2> <br>
+        <table style="width: 100%" border="1" id="departmenttable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Name</td>
+                <td>Boss name</td>
+                <td>Action</td>
+            </tr>
+            <tr id="inputrow">
+                <td></td>
+
+                <td><input type="text" placeholder="Department name..." name="departmentname" id="departmentname"
+                           class="inputs" required/></td>
+                <td><input type="text" placeholder="Boss name..." name="departmentbossname" id="departmentbossname"
+                           class="inputs" required/></td>
+                <td><input type="button" name="adddepartment" id="adddepartment" value="Add department"
+                           class="addButton"></td>
+
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

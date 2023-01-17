@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Speciality page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/speciality/getAllSpecialities',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+            jQuery("#showonedep").click(function () {
+                var url = '/speciality/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+            jQuery("#addspeciality").click(function () {
+                jQuery("#specialityname").css('border', 'hidden');
+                jQuery("#univername").css('border', 'hidden');
+                jQuery("#cityname").css('border', 'hidden');
+                jQuery("#edulist").css('border', 'hidden');
+                var Speciality = {
+                    name: jQuery("#specialityname").val(),
+                    univer_name: jQuery("#univername").val(),
+                    city_name: jQuery("#cityname").val(),
+                    rate: jQuery("#edulist").val()
+                };
+                var url = '/speciality';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Speciality),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/speciality/getAllSpecialities',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#specialityname").val('');
+                                jQuery("#univername").val('');
+                                jQuery("#cityname").val('');
+                                jQuery("#edulist").val('');
+                            }
+                        });
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "Name") {
+                            jQuery("#specialityname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "University") {
+                            jQuery("#univername").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "City") {
+                            jQuery("#cityname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "Rate") {
+                            jQuery("#edulist").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].speciality_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].speciality_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].univer_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].city_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].rate;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteSpeciality(" + data[key].speciality_id + ")' value='Delete speciality' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editSpeciality(this)' value='Edit speciality' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deleteSpeciality(id) {
+            var url = '/speciality/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/speciality/getAllSpecialities',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function editSpeciality(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+
+                if (index == 1) {
+                    if (jQuery(this).text() === 'null') {
+                        jQuery(this).html("<input type='text' placeholder='Speciality name...' id='editname'  class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='text' placeholder='Speciality name...' id='editname' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 2) {
+                    if (jQuery(this).text() === 'null') {
+                        jQuery(this).html("<input type='text' placeholder='University...' id='edituniver'  class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='text' placeholder='University...' id='edituniver' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 3) {
+                    if (jQuery(this).text() === 'null') {
+                        jQuery(this).html("<input type='text' placeholder='City...' id='editcity' class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='text' placeholder='City...' id='editcity' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 4) {
+                    jQuery(this).html("<select class='inputs' name='edulist' id='edulist'>" +
+                        "<option value='Магістр'>Магістр</option>" +
+                        "<option value='Бакалавр'>Бакалавр</option>" +
+                        "</select>");
+                } else if (index == 5) {
+                    var actionHtml = "<input type='button' onclick='applyEditSpeciality(this)' value='Update speciality' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            var id;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index != 0 && index != 5 && index != 4) {
+                    jQuery(this).html(jQuery(this).find('input').val());
+                } else if (index == 4) {
+                    jQuery(this).html(jQuery(this).find('select').val());
+                } else if (index == 5) {
+                    var actionHtml = "<input type='button' onclick='deleteSpeciality(" + id +
+                        ")' value='Delete speciality' class='delButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='editSpeciality(this)' value='Edit speciality' class='editButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+                jQuery.ajax({
+                    url: '/speciality/getAllSpecialities',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                    }
+                });
+            });
+        }
+
+        function applyEditSpeciality(button) {
+            jQuery("#specialityname").css('border', 'hidden');
+            jQuery("#univername").css('border', 'hidden');
+            jQuery("#cityname").css('border', 'hidden');
+            jQuery("#edulist").css('border', 'hidden');
+            var id, speciality_name, univer_name, city_name, rate;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    speciality_name = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    univer_name = jQuery(this).find('input').val();
+                } else if (index == 3) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    city_name = jQuery(this).find('input').val();
+                } else if (index == 4) {
+                    jQuery(this).find('select').css('border', 'hidden');
+                    rate = jQuery(this).find('select').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/speciality/update';
+            var newSpeciality = {
+                id: id,
+                name: speciality_name,
+                univer_name: univer_name,
+                city_name: city_name,
+                rate: rate
+            }
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newSpeciality),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/speciality/getAllSpecialities',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                    jQuery(button).closest('tr').children().each(function (index, value) {
+                        if (index == 1 && e.responseJSON.responseMessage === "Name") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 2 && e.responseJSON.responseMessage === "University") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 3 && e.responseJSON.responseMessage === "City") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 4 && e.responseJSON.responseMessage === "Rate") {
+                            jQuery(this).find('select').css('border', '1px solid #f6465d');
+                        }
+                    });
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a class="active" onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp"><input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+<div id="tableBlock">
+    <h2>Speciality table</h2> <br>
+    <!--    <form>-->
+    <table style="width: 100%" border="1" id="specialitytable">
+        <tr id="headerrow">
+            <td>Id</td>
+            <td>Name</td>
+            <td>University</td>
+            <td>City</td>
+            <td>Rate</td>
+            <td>Action</td>
+        </tr>
+        <tr id="inputrow">
+            <td></td>
+<!--            <form>-->
+                <td><input type="text" placeholder="Speciality name..." name="specialityname" id="specialityname" class="inputs" required/></td>
+                <td><input type="text" placeholder="University..." name="univername" id="univername" class="inputs" required/></td>
+                <td><input type="text" placeholder="City..." name="cityname" id="cityname" class="inputs" required/></td>
+                <td>
+                    <select name="edulist" id="edulist" class="inputs">
+                        <option value="Магістр">Магістр</option>
+                        <option value="Бакалавр">Бакалавр</option>
+                    </select>
+                </td>
+                <td><input type="button" name="addspeciality" id="addspeciality" value="Add speciality"
+                           class="addButton">
+                </td>
+<!--            </form>-->
+        </tr>
+    </table>
+    <!--    </form>-->
+    <br><br>
+</div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

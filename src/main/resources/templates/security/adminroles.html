@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Roles page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/admin/rights/getAllRights',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <p sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></p>
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Specialty</a>
+        <nav class="buttons">
+            <ul class="menu">
+                <li><a class="active" >Admin</a>
+                    <ul class="submenu">
+                        <li><a class="subBtn" onclick="location.href = '/admin/user/show';">Users</a></li>
+                        <li><a class="subBtn" onclick="location.href = '/admin/rights/show';">Roles</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="search-container">
+            <form action="/action_page.php">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+                <a onclick="location.href = '/cab';" class="material-icons" style="font-size: 24px; padding-left: 0px;">person</a>
+            </form>
+        </div>
+    </div>
+    <div id="tableBlock">
+        <h2>Roles table</h2> <br>
+        <table style="width: 100%" border="1" id="departmenttable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Name</td>
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" class="dark"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Access denied</title>
+</head>
+<body>
+
+<div class="header">
+    <div class="topnav">
+        <p sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></p>
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Specialty</a>
+        <nav class="buttons">
+            <ul class="menu">
+                <li><a>Admin</a>
+                    <ul class="submenu">
+                        <li><a class="subBtn" onclick="location.href = '/admin/user/show';">Users</a></li>
+                        <li><a class="subBtn" onclick="location.href = '/admin/rights/show';">Roles</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="search-container">
+            <form action="/action_page.php">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+                <a onclick="location.href = '/cab';" class="material-icons" style="font-size: 24px; padding-left: 0px;">person</a>
+            </form>
+        </div>
+    </div>
+
+    <br><br>
+    <div class = "logregPage">
+        <div id="tableBlock">
+            <div class="container denied">
+                Access denied for user <span sec:authentication="principal.username"> User</span>!
+            </div>
+            <a class="reghref" onclick="location.href = '/';">Return to home page</a>
+            <br><br>
+        </div>
+    </div>
+</div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

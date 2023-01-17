@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Employee page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/employee/getAllEmployees',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/employee/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#addemployee").click(function () {
+                jQuery("#employeename").css('border', 'hidden');
+                jQuery("#birthdate").css('border', 'hidden');
+                jQuery("#employmentdate").css('border', 'hidden');
+                jQuery("#phonenumber").css('border', 'hidden');
+                var Employee = {
+                    post: {
+                        id: jQuery("#postId").val()
+                    },
+                    name: jQuery("#employeename").val(),
+                    birth_date: jQuery("#birthdate").val(),
+                    employment_date: jQuery("#employmentdate").val(),
+                    home_adress: jQuery("#homeadress").val(),
+                    phone_number: jQuery("#phonenumber").val(),
+                    sex: jQuery("#sexlist").val()
+                };
+                var url = '/employee';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Employee),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/employee/getAllEmployees',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#postId").val('')
+                                jQuery("#employeename").val('');
+                                jQuery("#birthdate").val('');
+                                jQuery("#employmentdate").val('');
+                                jQuery("#homeadress").val('');
+                                jQuery("#phonenumber").val('');
+                                jQuery("#sexlist").val('');
+                            }
+                        });
+                        // console.log(jQuery("#sexlist").val())
+                    },
+                    error: function (e) {
+                        var text = e.responseText;
+                        if (text.includes("!DOCTYPE html")) {
+                            location.href = "/accessdenied"
+                        } else {
+                            alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                            if (e.responseJSON.responseMessage === "name") {
+                                jQuery("#employeename").css('border', '1px solid #f6465d')
+                            } else if (e.responseJSON.responseMessage === "Birth date") {
+                                jQuery("#birthdate").css('border', '1px solid #f6465d');
+                            } else if (e.responseJSON.responseMessage === "Phone number") {
+                                jQuery("#phonenumber").css('border', '1px solid #f6465d');
+                            } else if (e.responseJSON.responseMessage === "Employment date") {
+                                jQuery("#employmentdate").css('border', '1px solid #f6465d');
+                            }
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].birth_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].home_adress;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].phone_number;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].sex;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].employment_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].post_id;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteEmployee(" + data[key].id + ")' value='Delete employee' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editEmployee(this)' value='Edit employee' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deleteEmployee(id) {
+            var url = '/employee/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/employee/getAllEmployees',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                },
+                error: function (e){
+                    var text = e.responseText;
+                    if (text.includes("!DOCTYPE html")) {
+                        location.href = "/accessdenied"
+                    }
+                }
+            });
+        }
+
+        function editEmployee(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 1) {
+                    jQuery(this).html("<input type='text' placeholder='Employee name...' id='editname' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 2) {
+                    jQuery(this).html("<input type='date' id='editbirthdate' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 3) {
+                    if (jQuery(this).text() === "null") {
+                        jQuery(this).html("<input type='text' placeholder='Address...' id='edithomeadress' class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='text' placeholder='Address...' id='edithomeadress' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 4) {
+                    jQuery(this).html("<input type='text' placeholder='Phone...' id='editphonenumber' value='" +
+                        jQuery(this).text() + "' class='inputs' />");
+                } else if (index == 5) {
+                    jQuery(this).html("<select id='editsexlist' class='inputs'>" +
+                        "<option value='М'>Чоловіча</option>" +
+                        "<option value='Ж'>Жіноча</option>" +
+                        "</select>");
+                } else if (index == 6) {
+                    jQuery(this).html("<input type='date' id='editemploymentdate' value='" +
+                        jQuery(this).text() + "' class='inputs' />");
+                } else if (index == 7) {
+                    if (jQuery(this).text() === "null") {
+                        jQuery(this).html("<input type='number' id='editpostId' class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='number' id='editpostId' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 8) {
+                    var actionHtml = "<input type='submit' onclick='applyEditEmployee(this)' value='Update employee' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='submit' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            jQuery.ajax({
+                url: '/employee/getAllEmployees',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('.datarow').remove();
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+        }
+
+        function applyEditEmployee(button) {
+            jQuery("#employeename").css('border', 'hidden');
+            jQuery("#birthdate").css('border', 'hidden');
+            jQuery("#employmentdate").css('border', 'hidden');
+            jQuery("#phonenumber").css('border', 'hidden');
+            var id, employee_name, birth_date, home_adress, phone_number, sex, empl_date, postid;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    employee_name = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    birth_date = jQuery(this).find('input').val();
+                } else if (index == 3) {
+                    home_adress = jQuery(this).find('input').val();
+                } else if (index == 4) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    phone_number = jQuery(this).find('input').val();
+                } else if (index == 5) {
+                    sex = jQuery(this).find('select').val();
+                } else if (index == 6) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    empl_date = jQuery(this).find('input').val();
+                } else if (index == 7) {
+                    postid = jQuery(this).find('input').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/employee/update';
+            var newEmployee = {
+                id: id,
+                post: {
+                    id: postid
+                },
+                name: employee_name,
+                birth_date: birth_date,
+                employment_date: empl_date,
+                home_adress: home_adress,
+                phone_number: phone_number,
+                sex: sex
+            }
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newEmployee),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/employee/getAllEmployees',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    var text = e.responseText;
+                    if (text.includes("!DOCTYPE html")) {
+                        location.href = "/accessdenied"
+                    } else {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        jQuery(button).closest('tr').children().each(function (index, value) {
+                            if (index == 1 && e.responseJSON.responseMessage === "name") {
+                                jQuery(this).find('input').css('border', '1px solid #f6465d');
+                            } else if (e.responseJSON.responseMessage === "Birth date" && index == 2) {
+                                jQuery(this).find('input').css('border', '1px solid #f6465d');
+                            } else if (e.responseJSON.responseMessage === "Phone number" && index == 4) {
+                                jQuery(this).find('input').css('border', '1px solid #f6465d');
+                            } else if (e.responseJSON.responseMessage === "Employment date" && index == 6) {
+                                jQuery(this).find('input').css('border', '1px solid #f6465d');
+                            }
+                        });
+                    }
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <p sec:authorize="isAuthenticated()"><a th:href="@{/logout}">Logout</a></p>
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a class="active" onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Specialty</a>
+        <nav class="buttons">
+            <ul class="menu">
+                <li><a>Admin</a>
+                    <ul class="submenu">
+                        <li><a class="subBtn" onclick="location.href = '/admin/user/show';">Users</a></li>
+                        <li><a class="subBtn" onclick="location.href = '/admin/rights/show';">Roles</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp">
+                <input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+                <a onclick="location.href = '/cab';" class="material-icons" style="font-size: 24px; padding-left: 0px;">person</a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2></h2> <br>
+        <h2></h2> <br>
+        <h2>Employee table</h2> <br>
+        <table style="width: 100%" border="1" id="employeetable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Name</td>
+                <td>Birth date</td>
+                <td>Home adress</td>
+                <td>Phone number</td>
+                <td>Sex</td>
+                <td>Employment date</td>
+                <td>Post Id</td>
+                <td>Action</td>
+            </tr>
+            <tr id="inputrow">
+                <td></td>
+                <!--            <form>-->
+                <td><input type="text" placeholder="Employee name..." name="employeename" id="employeename"
+                           class="inputs" required/></td>
+                <td><input type="date" name="birthdate" id="birthdate" class="inputs" required/></td>
+                <td><input type="text" placeholder="Address..." name="homeadress" id="homeadress" class="inputs"/></td>
+                <td><input type="text" placeholder="Phone..." name="phonenumber" id="phonenumber" class="inputs"
+                           required/></td>
+                <td>
+                    <select name="sexlist" id="sexlist" class="inputs">
+                        <option value="М">Чоловіча</option>
+                        <option value="Ж">Жіноча</option>
+                    </select>
+                </td>
+                <td><input type="date" name="employmentdate" id="employmentdate" class="inputs" required/></td>
+                <td><select name="postId" id="postId" class="inputs">
+                    <option value=""></option>
+                    <option th:each="post : ${posts}" th:text="${post.getId()}"
+                            th:value="${post.getId()}"></option>
+                </select></td>
+                <td><input type="button" name="addemployee" id="addemployee" value="Add employee" class="addButton">
+                </td>
+                <!--            </form>-->
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

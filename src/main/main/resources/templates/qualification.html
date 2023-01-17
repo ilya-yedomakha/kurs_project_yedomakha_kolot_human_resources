@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Qualification page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/qualification/getAllQualifications',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/qualification/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#addqualification").click(function () {
+                jQuery("#qualificationname").css('border', 'hidden');
+                jQuery("#certificate").css('border', 'hidden');
+                jQuery("#passingdate").css('border', 'hidden');
+                jQuery("#certificateend").css('border', 'hidden');
+                var Qualification = {
+                    qualification_name: jQuery("#qualificationname").val(),
+                    employee: {
+                        id: jQuery("#employeeId").val()
+                    },
+                    certificate: jQuery("#certificate").val(),
+                    passing_date: jQuery("#passingdate").val(),
+                    certificate_end: jQuery("#certificateend").val()
+                };
+                var url = '/qualification';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(Qualification),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/qualification/getAllQualifications',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#qualificationname").val('');
+                                jQuery("#employeeId").val('');
+                                jQuery("#certificate").val('');
+                                jQuery("#passingdate").val('');
+                                jQuery("#certificateend").val('');
+                            }
+                        });
+                        console.log("success!")
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "Name") {
+                            jQuery("#qualificationname").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "Certificate") {
+                            jQuery("#certificate").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "Passing date") {
+                            jQuery("#passingdate").css('border', '1px solid #f6465d');
+                        } else if (e.responseJSON.responseMessage === "Certificate end") {
+                            jQuery("#certificateend").css('border', '1px solid #f6465d');
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].qualification_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].qualification_name;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].certificate;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].passing_date;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].certificate_end;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].employee_id;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteQualification(" + data[key].qualification_id + ")' value='Delete qualification' class='delButton'/>";
+                    tableContent = tableContent + "<input type='button' onclick='editQualification(this)' value='Edit qualification' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deleteQualification(id) {
+            var url = '/qualification/delete/' + id;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/qualification/getAllQualifications',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+        function editQualification(button) {
+            jQuery(button).closest('tr').children().each(function (index, value) {
+
+                if (index == 1) {
+                    jQuery(this).html("<input type='text' placeholder='Qualification name...' id='editname' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 2) {
+                    jQuery(this).html("<input type='text' placeholder='Certificate...' id='editcertificate' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 3) {
+                    jQuery(this).html("<input type='date' id='editpassingdate' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 4) {
+                    jQuery(this).html("<input type='date' id='editcertificateend' value='" +
+                        jQuery(this).text() + "' class='inputs'/>");
+                } else if (index == 5) {
+                    if (jQuery(this).text() === "null") {
+                        jQuery(this).html("<input type='number' id='editemployeeId' class='inputs'/>");
+                    } else {
+                        jQuery(this).html("<input type='number' id='editemployeeId' value='" +
+                            jQuery(this).text() + "' class='inputs'/>");
+                    }
+                } else if (index == 6) {
+                    var actionHtml = "<input type='button' onclick='applyEditQualification(this)' value='Update qualification' class='applyButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='cancelEdit(this)' value='Cancel edit' class='cancelButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+            });
+        }
+
+        function cancelEdit(button) {
+            var id;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index != 0 && index != 6) {
+                    jQuery(this).html(jQuery(this).find('input').val());
+                } else if (index == 6) {
+                    var actionHtml = "<input type='button' onclick='deleteQualification(" + id +
+                        ")' value='Delete qualification' class='delButton'/>"
+                    actionHtml = actionHtml + "<input type='button' onclick='editQualification(this)' value='Edit qualification' class='editButton'/>"
+                    jQuery(this).html(actionHtml);
+                }
+                jQuery.ajax({
+                    url: '/qualification/getAllQualifications',
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                    }
+                });
+            });
+        }
+
+        function applyEditQualification(button) {
+            jQuery("#qualificationname").css('border', 'hidden');
+            jQuery("#certificate").css('border', 'hidden');
+            jQuery("#passingdate").css('border', 'hidden');
+            jQuery("#certificateend").css('border', 'hidden');
+            var id, name, certificate, passing_date, certificate_end, employeeid;
+            jQuery(button).closest('tr').children().each(function (index, value) {
+                if (index == 0) {
+                    id = jQuery(this).text();
+                } else if (index == 1) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    name = jQuery(this).find('input').val();
+                } else if (index == 2) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    certificate = jQuery(this).find('input').val();
+                } else if (index == 3) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    passing_date = jQuery(this).find('input').val();
+                } else if (index == 4) {
+                    jQuery(this).find('input').css('border', 'hidden');
+                    certificate_end = jQuery(this).find('input').val();
+                } else if (index == 5) {
+                    employeeid = jQuery(this).find('input').val();
+                }
+            });
+            //Send ajax request for upating product
+            var url = '/qualification/update';
+            var newQualification = {
+                id: id,
+                qualification_name: name,
+                employee: {
+                    id: employeeid
+                },
+                certificate: certificate,
+                passing_date: passing_date,
+                certificate_end: certificate_end
+            }
+            jQuery.ajax({
+                url: url,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newQualification),
+                dataType: 'json',
+                success: function (data) {
+                    jQuery.ajax({
+                        url: '/qualification/getAllQualifications',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        }
+                    });
+                },
+                error: function (e) {
+                    alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                    jQuery(button).closest('tr').children().each(function (index, value) {
+                        if (index == 1 && e.responseJSON.responseMessage === "Name") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 2 && e.responseJSON.responseMessage === "Certificate") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 3 && e.responseJSON.responseMessage === "Passing date") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        } else if (index == 4 && e.responseJSON.responseMessage === "Certificate end") {
+                            jQuery(this).find('input').css('border', '1px solid #f6465d');
+                        }
+                    });
+                }
+            });
+
+
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a class="active" onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp"><input
+                    type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+    <div id="tableBlock">
+        <h2>Qualification table</h2> <br>
+        <table style="width: 100%" border="1" id="qualificationtable">
+            <tr id="headerrow">
+                <td>Id</td>
+                <td>Name</td>
+                <td>Certificate</td>
+                <td>Passing date</td>
+                <td>Certificate end</td>
+                <td>employee Id</td>
+                <td>Action</td>
+            </tr>
+            <tr id="inputrow">
+                <td></td>
+                <td><input type="text" placeholder="Qualification name..." name="qualificationname"
+                           id="qualificationname" class="inputs" required/></td>
+                <td><input type="text" placeholder="Certificate..." name="certificate" id="certificate" class="inputs"
+                           required/></td>
+                <td><input type="date" name="passingdate" id="passingdate" class="inputs" required/></td>
+                <td><input type="date" name="certificateend" id="certificateend" class="inputs" required/></td>
+                <td><select name="employeeId" id="employeeId" class="inputs">
+                    <option value=""></option>
+                    <option th:each="employee : ${employees}" th:text="${employee.getId()}"
+                            th:value="${employee.getId()}"></option>
+                </select></td>
+                <td><input type="button" name="addqualification" id="addqualification" value="Add qualification"
+                           class="addButton"></td>
+            </tr>
+        </table>
+        <br><br>
+    </div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link th:href="@{/styles/style.css}" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Diploma page</title>
+    <script th:src="@{/js/jquery-3.5.0.js}"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(function () {
+            jQuery.ajax({
+                url: '/employee_speciality/getAllEmplSpecs',
+                dataType: 'json',
+                type: 'GET',
+                success: function (data) {
+                    jQuery('#headerrow').after(createDataRowsFromJson(data));
+                }
+            });
+
+            jQuery("#showonedep").click(function () {
+                var url = '/employee_speciality/search/' + jQuery("#depbyid").val();
+                $.ajax({
+                    url: url,
+                    dataType: 'json',
+                    type: 'GET',
+                    success: function (data) {
+                        jQuery('.datarow').remove();
+                        jQuery('#headerrow').after(createDataRowsFromJson(data));
+                        jQuery('#inputrow').hide();
+                    }
+                });
+            });
+
+            jQuery("#addemplSpec").click(function () {
+                jQuery("#diplomanumber").css('border', 'hidden')
+                var EmplSpec = {
+                    id: {
+                        employeeId: jQuery("#employeeId").val(),
+                        specialityId: jQuery("#specialityId").val()
+                    },
+                    employee: {
+                        id: jQuery("#employeeId").val()
+                    },
+                    speciality: {
+                        id: jQuery("#specialityId").val()
+                    },
+                    diploma_number: jQuery("#diplomanumber").val()
+                };
+                var url = '/employee_speciality';
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(EmplSpec),
+                    dataType: 'json',
+                    success: function (data) {
+                        jQuery.ajax({
+                            url: '/employee_speciality/getAllEmplSpecs',
+                            dataType: 'json',
+                            type: 'GET',
+                            success: function (data) {
+                                jQuery('.datarow').remove();
+                                jQuery('#headerrow').after(createDataRowsFromJson(data));
+                                jQuery("#employeeId").val('');
+                                jQuery("#specialityId").val('');
+                                jQuery("#diplomanumber").val('');
+                            }
+                        });
+                        console.log("success!")
+                    },
+                    error: function (e) {
+                        alert("Error! The field " + e.responseJSON.responseMessage + " is empty or given value is unsuitable!");
+                        if (e.responseJSON.responseMessage === "diploma number") {
+                            jQuery("#diplomanumber").css('border', '1px solid #f6465d')
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+
+        function createDataRowsFromJson(data) {
+            var tableContent = "";
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    tableContent = tableContent + "<tr class='datarow'>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].employee_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].speciality_id;
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + data[key].diploma_number;
+                    tableContent = tableContent + "</td>";
+
+                    tableContent = tableContent + "<td>";
+                    tableContent = tableContent + "<input type='button' onclick='deleteEmplSpec(" + data[key].employee_id + "," + data[key].speciality_id + ")' value='Delete emplSpec' class='delButton'/>";
+                    // tableContent = tableContent + "<input type='button' onclick='editEmplSpec(this)' value='Edit emplSpec' class='editButton'/>";
+                    tableContent = tableContent + "</td>";
+                    tableContent = tableContent + "</tr>";
+                }
+            }
+            return tableContent;
+        }
+
+        function deleteEmplSpec(emplId, specId) {
+            var url = '/employee_speciality/delete/employee/' + emplId + '/speciality/' + specId;
+            //Send ajax request for deleting product
+            jQuery.ajax({
+                url: url,
+                type: 'DELETE',
+                success: function () {
+                    window.location.reload();
+                    jQuery.ajax({
+                        url: '/employee_speciality/getAllEmplSpecs',
+                        dataType: 'json',
+                        type: 'GET',
+                        success: function (data) {
+                            jQuery('.datarow').remove();
+                            jQuery('#headerrow').after(createDataRowsFromJson(data));
+                            console.log("success!")
+                        }
+                    });
+
+                }
+            });
+        }
+
+
+    </script>
+</head>
+<body>
+<div class="header">
+    <div class="topnav">
+        <a onclick="location.href = '/';">Home</a>
+        <a onclick="location.href = '/department/show';">Department</a>
+        <a onclick="location.href = '/employee/show';">Employee</a>
+        <a class="active" onclick="location.href = '/employee_speciality/show';">Diploma</a>
+        <a onclick="location.href = '/post/show';">Post</a>
+        <a onclick="location.href = '/promotion/show';">Promotion</a>
+        <a onclick="location.href = '/qualification/show';">Qualification</a>
+        <a onclick="location.href = '/speciality/show';">Speciality</a>
+
+        <div class="search-container">
+            <form action="/action_page.php">
+                <input type="text" name="depbyid" id="depbyid" placeholder="Search..." class="search_inp"><input type="button" name="showonedep" id="showonedep" value="Search" class="editButton">
+                <a href="#" class="themetoggle">
+                    <span class="material-icons">wb_sunny</span>
+                </a>
+            </form>
+        </div>
+
+    </div>
+<div id="tableBlock">
+    <h2>Diploma table</h2><br>
+    <table style="width: 100%" border="1" id="emplSpectable">
+        <tr id="headerrow">
+            <td>Employee Id</td>
+            <td>Speciality Id</td>
+            <td>Diploma number</td>
+            <td>Action</td>
+        </tr>
+        <tr id="inputrow">
+<!--            <form>-->
+                <td><select name="employeeId" id="employeeId" class="inputs">
+                    <option th:each="employee : ${employees}" th:text="${employee.getId()}"
+                            th:value="${employee.getId()}"></option>
+                </select></td>
+                <td><select name="specialityId" id="specialityId" class="inputs">
+                    <option th:each="speciality : ${specialities}" th:text="${speciality.getId()}"
+                            th:value="${speciality.getId()}"></option>
+                </select></td>
+                <td><input type="text" name="diplomanumber" placeholder="Diploma number..." id="diplomanumber" class="inputs" required/></td>
+                <td><input type="button" name="addemplSpec" id="addemplSpec" value="Add emplSpec" class="addButton">
+                </td>
+<!--            </form>-->
+        </tr>
+    </table>
+    <br><br>
+</div>
+</div>
+<footer>
+    <div class="footerC">
+        <div>by Yedomakha Ilya & Kolot Oleg</div>
+    </div>
+</footer>
+<script th:src="@{/js/script.js}"></script>
+</body>
+</html>
