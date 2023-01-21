@@ -12,9 +12,7 @@ import com.example.kurs_project_3.persistence.EmployeeRepository;
 import com.example.kurs_project_3.persistence.PostRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 
 @Service
@@ -126,6 +124,22 @@ public class PostService{
             postJSONS.add(PostToPostJSON.toPostJSON(post));
         }
         return new TreeSet<>(postJSONS);
+    }
+
+    public List<Post> getPostsList(){
+        List<Post> posts = new ArrayList<>();
+        postRepository.findAll().forEach(posts::add);
+        return posts;
+    }
+
+    public List<PostJSON> getPostsJSONList(){
+        List<Post> posts = new ArrayList<>();
+        List<PostJSON> postJSONs = new ArrayList<>();
+        postRepository.findAll().forEach(posts::add);
+        for (Post post:posts){
+            postJSONs.add(PostToPostJSON.toPostJSON(post));
+        }
+        return postJSONs;
     }
 
 }
